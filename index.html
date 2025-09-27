@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Estoque</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema de Gerenciamento de Estoque</h1>
+        </div>
+
+        <div class="main-content-wrapper">
+            
+            <div class="nav-tabs">
+                <button class="tab-button active" onclick="showTab('resumo')">📊 Resumo</button>
+                <button class="tab-button" onclick="showTab('produtos')">📦 Produtos</button>
+                <button class="tab-button" onclick="showTab('movimentacao')">🚚 Movimentação</button>
+                <button class="tab-button" onclick="showTab('configuracoes')">⚙️ Configurações</button> 
+            </div>
+
+            <div class="tab-content-wrapper">
+                <div id="resumo" class="tab-content active">
+                    <h2 class="section-title">Resumo do Estoque</h2>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Atenção!</strong> Você tem 3 produtos com estoque baixo.
+                    </div>
+
+                    <div class="summary-cards" id="summary-cards">
+                        </div>
+
+                    <h3>Produtos com Estoque Baixo</h3>
+                    <div class="table-container">
+                        <table class="simple-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="produtos-baixo-tbody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="produtos" class="tab-content">
+                    <h2 class="section-title">Gerenciar Produtos</h2>
+                    
+                    <input type="text" class="search-box" placeholder="Buscar produto...">
+                    
+                    <div class="table-container">
+                        <table class="simple-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th>Categoria</th>
+                                    <th>Quantidade</th>
+                                    <th>Preço</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="produtos-tbody">
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-section">
+                            <h3 id="form-title">Adicionar Novo Produto</h3>
+                            <form id="produto-form">
+                                <input type="hidden" id="produto-id" value="">
+                                <div class="form-group">
+                                    <label for="codigo">Código:</label>
+                                    <input type="text" id="codigo" placeholder="Ex: 006" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="nome">Nome do Produto:</label>
+                                    <input type="text" id="nome" placeholder="Nome do produto" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="categoria">Categoria:</label>
+                                    <select id="categoria" required>
+                                        <option value="">Selecione uma categoria</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="quantidade">Quantidade:</label>
+                                    <input type="number" id="quantidade" placeholder="0" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="preco">Preço:</label>
+                                    <input type="number" id="preco" placeholder="0.00" step="0.01" min="0" required>
+                                </div>
+                                <button type="submit" class="btn btn-success" id="btn-salvar">Adicionar Produto</button>
+                                <button type="button" class="btn" id="btn-cancelar" onclick="cancelarEdicao()" style="display: none; margin-top: 10px;">Cancelar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="movimentacao" class="tab-content">
+                    <h2 class="section-title">Movimentação de Estoque</h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-section">
+                            <h3>Entrada de Produtos</h3>
+                            <form id="form-entrada">
+                                <div class="form-group">
+                                    <label>Produto:</label>
+                                    <select id="entrada-produto-id" required>
+                                        <option value="">Selecione um produto</option>
+                                        </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantidade:</label>
+                                    <input type="number" id="entrada-quantidade" placeholder="Quantidade a adicionar" min="1" required>
+                                </div>
+                                <button type="submit" class="btn btn-success">Registrar Entrada</button>
+                            </form>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Saída de Produtos</h3>
+                            <form id="form-saida">
+                                <div class="form-group">
+                                    <label>Produto:</label>
+                                    <select id="saida-produto-id" required>
+                                        <option value="">Selecione um produto</option>
+                                        </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantidade:</label>
+                                    <input type="number" id="saida-quantidade" placeholder="Quantidade a retirar" min="1" required>
+                                </div>
+                                <button type="submit" class="btn btn-danger">Registrar Saída</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <h3>Últimas Movimentações</h3>
+                    <div class="table-container">
+                        <table class="simple-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Produto</th>
+                                    <th>Tipo</th>
+                                    <th>Quantidade</th>
+                                    <th>Preço Unitário</th>
+                                    <th>Valor Total</th>
+                                    <th>Ações</th> 
+                                </tr>
+                            </thead>
+                            <tbody id="movimentacao-tbody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="relatorios" class="tab-content">
+                    <h2 class="section-title">Relatórios</h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-section">
+                            <h3>Relatório por Categoria</h3>
+                            <div class="table-container">
+                                <table class="simple-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Categoria</th>
+                                            <th>Qtd Produtos</th>
+                                            <th>Estoque Total</th>
+                                            <th>Valor Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Material Escolar</td>
+                                            <td>5</td>
+                                            <td>125</td>
+                                            <td>R$ 1.280,50</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Escritório</td>
+                                            <td>8</td>
+                                            <td>85</td>
+                                            <td>R$ 2.450,00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Limpeza</td>
+                                            <td>4</td>
+                                            <td>60</td>
+                                            <td>R$ 890,20</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Produtos Mais Movimentados</h3>
+                            <div class="table-container">
+                                <table class="simple-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Produto</th>
+                                            <th>Entradas</th>
+                                            <th>Saídas</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Caneta Azul</td>
+                                            <td>50</td>
+                                            <td>45</td>
+                                            <td>95</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Papel A4</td>
+                                            <td>100</td>
+                                            <td>98</td>
+                                            <td>198</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Lápis HB</td>
+                                            <td>80</td>
+                                            <td>30</td>
+                                            <td>110</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="configuracoes" class="tab-content">
+                    <h2 class="section-title">Configurações e Cadastros Auxiliares</h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-section">
+                            <h3>Cadastrar Nova Categoria</h3>
+                            <form id="categoria-form">
+                                <div class="form-group">
+                                    <label for="nova-categoria-nome">Nome da Categoria:</label>
+                                    <input type="text" id="nova-categoria-nome" placeholder="Ex: Eletrônicos" required>
+                                </div>
+                                <button type="submit" class="btn btn-success">Adicionar Categoria</button>
+                            </form>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Categorias Existentes</h3>
+                            <div class="table-container">
+                                <table class="simple-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th style="width: 100px;">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categorias-tbody">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> </div> </div>
+
+    <div id="modal-confirmacao" class="modal">
+        <div class="modal-content">
+            <h3>Confirmar Exclusão</h3>
+            <p id="modal-mensagem-exclusao">Tem certeza que deseja excluir este item?</p>
+            <div class="modal-buttons">
+                <button class="btn btn-danger" onclick="excluirConfirmado()">Excluir</button>
+                <button class="btn" onclick="fecharModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
