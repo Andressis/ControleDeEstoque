@@ -1,6 +1,5 @@
-Site para Controle de Estoque utilizando:
-
-HTML CSS e JS (front-end)
-Python (backend)
-
-https://andressis.github.io/Controle-de-Estoque
+-----------------------------------------------
+    Para rodar este codigo baixe o NODE.JS
+-----------------------------------------------
+    No VsCode, rode ele com node server.js
+-----------------------------------------------
