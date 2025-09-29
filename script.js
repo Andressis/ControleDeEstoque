@@ -167,6 +167,42 @@ class EstoqueManager {
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     }
+    
+    // NOVO MÉTODO: Detalhes da Categoria ao Clicar
+    detalharCategoria(nomeCategoria) {
+        // 1. Filtra produtos pertencentes à categoria
+        const produtosDaCategoria = this.produtos.filter(p => p.Categoria === nomeCategoria);
+        
+        // 2. Calcula a quantidade total de itens em estoque (soma das quantidades)
+        const totalItens = produtosDaCategoria.reduce((acc, p) => acc + p.Quantidade, 0);
+        
+        // 3. Calcula o valor total do estoque da categoria (soma de Quantidade * Preco)
+        const valorTotalEstoque = produtosDaCategoria.reduce((acc, p) => {
+            return acc + (p.Quantidade * p.Preco);
+        }, 0);
+
+        const detalhesDiv = document.getElementById('categoria-detalhes');
+        if (!detalhesDiv) return;
+
+        // Formatação do valor para moeda local (BRL)
+        const valorFormatado = valorTotalEstoque.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // 4. Injeta e exibe os dados
+        detalhesDiv.innerHTML = `
+            <h4>Detalhes de Estoque: **${nomeCategoria}**</h4>
+            <p><strong>Total de Produtos Distintos:</strong> ${produtosDaCategoria.length}</p>
+            <p><strong>Quantidade Total em Estoque:</strong> ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}</p>
+            <p><strong>Valor Total do Estoque:</strong> ${valorFormatado}</p>
+        `;
+        
+        // Exibe o div de detalhes com um estilo de alerta informativo
+        detalhesDiv.className = 'alert alert-info';
+        detalhesDiv.style.display = 'block';
+
+        // Opcional: Rolagem suave até a div de detalhes
+        detalhesDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
 
     // =========================================================
     //                      MOVIMENTAÇÃO
@@ -312,14 +348,25 @@ class EstoqueManager {
         const tbody = document.getElementById('categorias-tbody');
         if (!tbody) return;
 
-        tbody.innerHTML = this.categorias.map(categoria => `
-            <tr>
-                <td>${categoria.Nome}</td>
-                <td>
-                    <button class="btn-action btn-delete" onclick="estoqueManager.confirmarExclusao('categoria', ${categoria.Id}, '${categoria.Nome}')">Excluir</button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = this.categorias.map(categoria => {
+            // Garante que aspas simples no nome da categoria sejam escapadas para o onclick
+            const nomeEscapado = categoria.Nome.replace(/'/g, "\\'"); 
+            
+            return `
+                <tr>
+                    <td class="categoria-nome-clicavel" onclick="estoqueManager.detalharCategoria('${nomeEscapado}')">${categoria.Nome}</td>
+                    <td>
+                        <button class="btn-action btn-delete" onclick="estoqueManager.confirmarExclusao('categoria', ${categoria.Id}, '${categoria.Nome}')">Excluir</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // Oculta a div de detalhes ao recarregar a tabela
+        const detalhesDiv = document.getElementById('categoria-detalhes');
+        if (detalhesDiv) {
+            detalhesDiv.style.display = 'none';
+        }
     }
 
     atualizarResumo() {

@@ -26,6 +26,10 @@
     /* Gradientes Vermelho (Perigo/Exclusão) */
     --red-1: #ef5350; /* Mais claro */
     --red-2: #c62828; /* Mais escuro */
+    
+    /* Gradientes Azul (Para links e infos) - NOVO */
+    --blue-1: #4299e1;
+    --blue-2: #3182ce;
 }
 
 body {
@@ -137,6 +141,21 @@ body {
     border-left: 5px solid var(--color-warning);
     color: #fff;
 }
+/* Estilo para a div de detalhes da categoria (alert-info personalizado) */
+.alert-info {
+    background-color: #3d3d4d; /* Fundo azul escuro */
+    border-left: 5px solid var(--blue-2);
+    color: #fff;
+}
+#categoria-detalhes h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+    color: var(--blue-1);
+    font-size: 1.1em;
+}
+
 
 .summary-cards {
     display: grid;
@@ -207,6 +226,19 @@ body {
 .simple-table td {
     white-space: normal;
     word-break: break-word;
+}
+
+/* Estilo para o nome da categoria que é clicável */
+.categoria-nome-clicavel {
+    font-weight: bold;
+    color: var(--blue-2); /* Cor de link */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.categoria-nome-clicavel:hover {
+    color: var(--blue-1); /* Cor mais clara no hover */
+    text-decoration: underline;
 }
 
 /* Status */
