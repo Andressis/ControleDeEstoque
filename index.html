@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciamento de Estoque</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -13,24 +15,24 @@
         </div>
 
         <div class="main-content-wrapper">
-            
+
             <div class="nav-tabs">
                 <button class="tab-button active" onclick="showTab('resumo')">📊 Resumo</button>
                 <button class="tab-button" onclick="showTab('produtos')">📦 Produtos</button>
                 <button class="tab-button" onclick="showTab('movimentacao')">🚚 Movimentação</button>
-                <button class="tab-button" onclick="showTab('configuracoes')">⚙️ Configurações</button> 
+                <button class="tab-button" onclick="showTab('configuracoes')">⚙️ Configurações</button>
             </div>
 
             <div class="tab-content-wrapper">
                 <div id="resumo" class="tab-content active">
                     <h2 class="section-title">Resumo do Estoque</h2>
-                    
+
                     <div class="alert alert-warning">
                         <strong>Atenção!</strong> Você tem 3 produtos com estoque baixo.
                     </div>
 
                     <div class="summary-cards" id="summary-cards">
-                        </div>
+                    </div>
 
                     <h3>Produtos com Estoque Baixo</h3>
                     <div class="table-container">
@@ -44,16 +46,21 @@
                                 </tr>
                             </thead>
                             <tbody id="produtos-baixo-tbody">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
                 <div id="produtos" class="tab-content">
                     <h2 class="section-title">Gerenciar Produtos</h2>
-                    
-                    <input type="text" class="search-box" placeholder="Buscar produto...">
-                    
+
+                    <div class="top-bar-actions">
+                        <button class="btn btn-action btn-primary" onclick="exportarProdutos()">
+                            <span class="icon">⬇️</span> Exportar para CSV
+                        </button>
+                        <input type="text" class="search-box" placeholder="Buscar produto...">
+                    </div>
+
                     <div class="table-container">
                         <table class="simple-table">
                             <thead>
@@ -68,7 +75,7 @@
                                 </tr>
                             </thead>
                             <tbody id="produtos-tbody">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
 
@@ -100,7 +107,8 @@
                                     <input type="number" id="preco" placeholder="0.00" step="0.01" min="0" required>
                                 </div>
                                 <button type="submit" class="btn btn-success" id="btn-salvar">Adicionar Produto</button>
-                                <button type="button" class="btn" id="btn-cancelar" onclick="cancelarEdicao()" style="display: none; margin-top: 10px;">Cancelar</button>
+                                <button type="button" class="btn" id="btn-cancelar" onclick="cancelarEdicao()"
+                                    style="display: none; margin-top: 10px;">Cancelar</button>
                             </form>
                         </div>
                     </div>
@@ -108,7 +116,7 @@
 
                 <div id="movimentacao" class="tab-content">
                     <h2 class="section-title">Movimentação de Estoque</h2>
-                    
+
                     <div class="form-grid">
                         <div class="form-section">
                             <h3>Entrada de Produtos</h3>
@@ -117,11 +125,12 @@
                                     <label>Produto:</label>
                                     <select id="entrada-produto-id" required>
                                         <option value="">Selecione um produto</option>
-                                        </select>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label>Quantidade:</label>
-                                    <input type="number" id="entrada-quantidade" placeholder="Quantidade a adicionar" min="1" required>
+                                    <input type="number" id="entrada-quantidade" placeholder="Quantidade a adicionar"
+                                        min="1" required>
                                 </div>
                                 <button type="submit" class="btn btn-success">Registrar Entrada</button>
                             </form>
@@ -134,11 +143,12 @@
                                     <label>Produto:</label>
                                     <select id="saida-produto-id" required>
                                         <option value="">Selecione um produto</option>
-                                        </select>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label>Quantidade:</label>
-                                    <input type="number" id="saida-quantidade" placeholder="Quantidade a retirar" min="1" required>
+                                    <input type="number" id="saida-quantidade" placeholder="Quantidade a retirar"
+                                        min="1" required>
                                 </div>
                                 <button type="submit" class="btn btn-danger">Registrar Saída</button>
                             </form>
@@ -156,18 +166,18 @@
                                     <th>Quantidade</th>
                                     <th>Preço Unitário</th>
                                     <th>Valor Total</th>
-                                    <th>Ações</th> 
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="movimentacao-tbody">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
                 <div id="relatorios" class="tab-content">
                     <h2 class="section-title">Relatórios</h2>
-                    
+
                     <div class="form-grid">
                         <div class="form-section">
                             <h3>Relatório por Categoria</h3>
@@ -242,10 +252,10 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="configuracoes" class="tab-content">
                     <h2 class="section-title">Configurações e Cadastros Auxiliares</h2>
-                    
+
                     <div class="form-grid">
                         <div class="form-section">
                             <h3>Cadastrar Nova Categoria</h3>
@@ -257,7 +267,7 @@
                                 <button type="submit" class="btn btn-success">Adicionar Categoria</button>
                             </form>
                         </div>
-                        
+
                         <div class="form-section">
                             <h3>Categorias Existentes</h3>
                             <div class="table-container">
@@ -269,15 +279,27 @@
                                         </tr>
                                     </thead>
                                     <tbody id="categorias-tbody">
-                                        </tbody>
+                                    </tbody>
                                 </table>
                             </div>
                             <div id="categoria-detalhes" class="alert" style="display: none; margin-top: 15px;">
-                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div> </div> </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-alerta" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-alerta-titulo"></h3>
+            <p id="modal-alerta-mensagem"></p>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="fecharModalAlerta()">OK</button>
+            </div>
+        </div>
+    </div>
 
     <div id="modal-confirmacao" class="modal">
         <div class="modal-content">
@@ -292,4 +314,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>

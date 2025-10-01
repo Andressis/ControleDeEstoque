@@ -45,7 +45,7 @@ class EstoqueManager {
             this.categorias = [];
         }
     }
-    
+
     async carregarMovimentacoes() {
         try {
             const response = await fetch('/api/movimentacoes');
@@ -66,8 +66,8 @@ class EstoqueManager {
             codigo: document.getElementById('codigo').value,
             nome: document.getElementById('nome').value,
             categoria: document.getElementById('categoria').value,
-            quantidade: parseInt(document.getElementById('quantidade').value) || 0, 
-            preco: parseFloat(document.getElementById('preco').value) || 0.00 
+            quantidade: parseInt(document.getElementById('quantidade').value) || 0,
+            preco: parseFloat(document.getElementById('preco').value) || 0.00
         };
 
         try {
@@ -85,7 +85,7 @@ class EstoqueManager {
                     body: JSON.stringify(produto)
                 });
             }
-            
+
             if (response.ok) {
                 await this.carregarProdutos();
                 this.cancelarEdicao();
@@ -100,22 +100,22 @@ class EstoqueManager {
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     }
-    
+
     iniciarEdicao(id) {
-        const produto = this.produtos.find(p => p.Id === id); 
+        const produto = this.produtos.find(p => p.Id === id);
         if (!produto) {
             console.error('Produto não encontrado para edição:', id);
             return;
         }
 
         this.editandoProduto = true;
-        
+
         document.getElementById('produto-id').value = produto.Id;
-        document.getElementById('codigo').value = produto.Codigo; 
-        document.getElementById('nome').value = produto.Nome; 
-        
-        this.atualizarSelectCategoriasProduto(produto.Categoria); 
-        
+        document.getElementById('codigo').value = produto.Codigo;
+        document.getElementById('nome').value = produto.Nome;
+
+        this.atualizarSelectCategoriasProduto(produto.Categoria);
+
         document.getElementById('quantidade').value = produto.Quantidade;
         document.getElementById('preco').value = produto.Preco;
 
@@ -130,12 +130,12 @@ class EstoqueManager {
     cancelarEdicao() {
         this.editandoProduto = false;
         this.limparFormulario('produto-form');
-        
+
         document.getElementById('form-title').textContent = 'Adicionar Novo Produto';
         document.getElementById('btn-salvar').textContent = 'Adicionar Produto';
         document.getElementById('btn-cancelar').style.display = 'none';
-        
-        this.atualizarSelectCategoriasProduto(); 
+
+        this.atualizarSelectCategoriasProduto();
     }
 
     // =========================================================
@@ -152,7 +152,7 @@ class EstoqueManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nome })
             });
-            
+
             if (response.ok) {
                 document.getElementById('nova-categoria-nome').value = '';
                 await this.carregarCategorias();
@@ -167,15 +167,15 @@ class EstoqueManager {
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     }
-    
+
     // NOVO MÉTODO: Detalhes da Categoria ao Clicar
     detalharCategoria(nomeCategoria) {
         // 1. Filtra produtos pertencentes à categoria
         const produtosDaCategoria = this.produtos.filter(p => p.Categoria === nomeCategoria);
-        
+
         // 2. Calcula a quantidade total de itens em estoque (soma das quantidades)
         const totalItens = produtosDaCategoria.reduce((acc, p) => acc + p.Quantidade, 0);
-        
+
         // 3. Calcula o valor total do estoque da categoria (soma de Quantidade * Preco)
         const valorTotalEstoque = produtosDaCategoria.reduce((acc, p) => {
             return acc + (p.Quantidade * p.Preco);
@@ -194,7 +194,7 @@ class EstoqueManager {
             <p><strong>Quantidade Total em Estoque:</strong> ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}</p>
             <p><strong>Valor Total do Estoque:</strong> ${valorFormatado}</p>
         `;
-        
+
         // Exibe o div de detalhes com um estilo de alerta informativo
         detalhesDiv.className = 'alert alert-info';
         detalhesDiv.style.display = 'block';
@@ -211,7 +211,7 @@ class EstoqueManager {
     async registrarMovimentacao(tipo) {
         const produtoId = document.getElementById(`${tipo}-produto-id`).value;
         const quantidade = parseInt(document.getElementById(`${tipo}-quantidade`).value);
-        
+
         if (!produtoId || isNaN(quantidade) || quantidade <= 0) {
             alert('Selecione um produto e insira uma quantidade válida.');
             return;
@@ -248,18 +248,18 @@ class EstoqueManager {
         this.atualizarResumo();
         this.atualizarProdutosBaixoEstoque();
         this.atualizarSelectsMovimentacao();
-        this.atualizarSelectCategoriasProduto(); 
-        this.atualizarTabelaCategorias(); 
-        this.atualizarTabelaMovimentacoes(); 
+        this.atualizarSelectCategoriasProduto();
+        this.atualizarTabelaCategorias();
+        this.atualizarTabelaMovimentacoes();
     }
-    
+
     atualizarTabelaMovimentacoes() {
         const tbody = document.getElementById('movimentacao-tbody');
         if (!tbody) return;
-        
+
         const formatDateTime = (dateString) => {
-            const options = { 
-                year: 'numeric', month: 'numeric', day: 'numeric', 
+            const options = {
+                year: 'numeric', month: 'numeric', day: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             };
             return new Date(dateString).toLocaleDateString('pt-BR', options);
@@ -269,16 +269,16 @@ class EstoqueManager {
             return new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL'
-            }).format(value || 0); 
+            }).format(value || 0);
         };
-        
+
         tbody.innerHTML = this.movimentacoes.map(mov => {
-            
+
             // Lógica para calcular o Valor Total: (Preço Unitário * Quantidade)
             // Usa PrecoUnitario (que é NULL para entrada) ou 0 se for nulo.
-            const precoUnitario = mov.PrecoUnitario || 0; 
+            const precoUnitario = mov.PrecoUnitario || 0;
             const valorTotal = mov.Tipo === 'saida' ? precoUnitario * mov.Quantidade : 0;
-            
+
             // Exibição do preço e valor total (apenas para saída)
             const displayPreco = mov.Tipo === 'saida' ? formatCurrency(precoUnitario) : '-';
             const displayTotal = mov.Tipo === 'saida' ? formatCurrency(valorTotal) : '-';
@@ -325,33 +325,33 @@ class EstoqueManager {
             </tr>
         `).join('');
     }
-    
+
     atualizarSelectCategoriasProduto(categoriaSelecionada = '') {
         const select = document.getElementById('categoria');
         if (!select) return;
 
-        const options = this.categorias.map(c => 
+        const options = this.categorias.map(c =>
             `<option value="${c.Nome}" ${c.Nome === categoriaSelecionada ? 'selected' : ''}>${c.Nome}</option>`
         ).join('');
-        
+
         const defaultOption = '<option value="">Selecione uma categoria</option>';
         select.innerHTML = defaultOption + options;
-        
+
         if (categoriaSelecionada) {
-             select.value = categoriaSelecionada;
+            select.value = categoriaSelecionada;
         } else if (select.value === '') {
             select.value = '';
         }
     }
-    
+
     atualizarTabelaCategorias() {
         const tbody = document.getElementById('categorias-tbody');
         if (!tbody) return;
 
         tbody.innerHTML = this.categorias.map(categoria => {
             // Garante que aspas simples no nome da categoria sejam escapadas para o onclick
-            const nomeEscapado = categoria.Nome.replace(/'/g, "\\'"); 
-            
+            const nomeEscapado = categoria.Nome.replace(/'/g, "\\'");
+
             return `
                 <tr>
                     <td class="categoria-nome-clicavel" onclick="estoqueManager.detalharCategoria('${nomeEscapado}')">${categoria.Nome}</td>
@@ -361,7 +361,7 @@ class EstoqueManager {
                 </tr>
             `;
         }).join('');
-        
+
         // Oculta a div de detalhes ao recarregar a tabela
         const detalhesDiv = document.getElementById('categoria-detalhes');
         if (detalhesDiv) {
@@ -374,7 +374,7 @@ class EstoqueManager {
         if (!summaryCards) return;
 
         const stats = this.calcularEstatisticas();
-        
+
         summaryCards.innerHTML = `
             <div class="summary-card">
                 <h3>${stats.total}</h3>
@@ -405,7 +405,7 @@ class EstoqueManager {
         if (!tbody) return;
 
         const produtosBaixo = this.produtos.filter(p => p.Quantidade > 0 && p.Quantidade <= 10);
-        
+
         tbody.innerHTML = produtosBaixo.map(produto => `
             <tr>
                 <td>${produto.Codigo}</td>
@@ -419,7 +419,7 @@ class EstoqueManager {
     atualizarSelectsMovimentacao() {
         const selects = document.querySelectorAll('#movimentacao select');
         const options = this.produtos.map(p => `<option value="${p.Id}">${p.Nome}</option>`).join('');
-        
+
         selects.forEach(select => {
             const currentValue = select.value;
             select.innerHTML = '<option value="">Selecione um produto</option>' + options;
@@ -430,49 +430,49 @@ class EstoqueManager {
     // =========================================================
     //                      EXCLUSÃO GENÉRICA
     // =========================================================
-    
+
     confirmarExclusao(tipo, id, nome) {
         this.itemParaExcluir = { tipo, id, nome };
         const modalMensagem = document.getElementById('modal-mensagem-exclusao');
-        
+
         if (tipo === 'produto') {
             modalMensagem.textContent = `Tem certeza que deseja excluir o produto "${nome}"? Esta ação é irreversível.`;
         } else if (tipo === 'categoria') {
             modalMensagem.textContent = `ATENÇÃO: Excluir a categoria "${nome}" pode causar problemas se houver produtos vinculados. Tem certeza?`;
         } else if (tipo === 'movimentacao') {
-             // MENSAGEM AJUSTADA PARA REFLETIR A REVERSÃO DO ESTOQUE
-             modalMensagem.textContent = `ATENÇÃO: Você irá excluir a transação: "${nome}". Isso **reverterá a quantidade** no estoque. Tem certeza?`; 
+            // MENSAGEM AJUSTADA PARA REFLETIR A REVERSÃO DO ESTOQUE
+            modalMensagem.textContent = `ATENÇÃO: Você irá excluir a transação: "${nome}". Isso **reverterá a quantidade** no estoque. Tem certeza?`;
         }
-        
+
         document.getElementById('modal-confirmacao').style.display = 'block';
     }
 
     async excluirConfirmado() {
         const { tipo, id } = this.itemParaExcluir;
-        
+
         if (tipo === 'produto') {
             await this.excluirItem('/api/produtos', id);
         } else if (tipo === 'categoria') {
             await this.excluirItem('/api/categorias', id);
         } else if (tipo === 'movimentacao') {
             // A API de movimentação fará a reversão do estoque.
-            await this.excluirItem('/api/movimentacoes', id); 
+            await this.excluirItem('/api/movimentacoes', id);
         }
-        
-        await this.carregarTudo(); 
+
+        await this.carregarTudo();
         this.fecharModal();
         this.atualizarInterface();
     }
-    
+
     async excluirItem(apiEndpoint, id) {
         try {
             const response = await fetch(`${apiEndpoint}/${id}`, {
                 method: 'DELETE'
             });
-            
+
             if (response.ok) {
-                 const data = await response.json();
-                 alert(data.mensagem);
+                const data = await response.json();
+                alert(data.mensagem);
             } else {
                 const erro = await response.json();
                 alert(`Erro ao excluir: ${erro.erro}`);
@@ -532,7 +532,7 @@ class EstoqueManager {
     buscarProdutos(termo) {
         const tbody = document.getElementById('produtos-tbody');
         const rows = tbody.getElementsByTagName('tr');
-        
+
         for (let i = 0; i < rows.length; i++) {
             const nome = rows[i].getElementsByTagName('td')[1];
             if (nome) {
@@ -551,21 +551,21 @@ class EstoqueManager {
         for (let i = 0; i < contents.length; i++) {
             contents[i].classList.remove('active');
         }
-        
+
         const buttons = document.getElementsByClassName('tab-button');
         for (let i = 0; i < buttons.length; i++) {
             buttons[i].classList.remove('active');
         }
-        
+
         document.getElementById(tabName).classList.add('active');
-        
-        const targetButton = Array.from(buttons).find(btn => 
+
+        const targetButton = Array.from(buttons).find(btn =>
             btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`showTab('${tabName}')`)
         );
         if (targetButton) {
             targetButton.classList.add('active');
         }
-        
+
         this.atualizarInterface();
     }
 
@@ -577,7 +577,7 @@ class EstoqueManager {
                 this.salvarProduto();
             });
         }
-        
+
         const categoriaForm = document.getElementById('categoria-form');
         if (categoriaForm) {
             categoriaForm.addEventListener('submit', (e) => {
@@ -585,7 +585,7 @@ class EstoqueManager {
                 this.salvarCategoria();
             });
         }
-        
+
         const formEntrada = document.getElementById('form-entrada');
         if (formEntrada) {
             formEntrada.addEventListener('submit', (e) => {
@@ -618,8 +618,57 @@ class EstoqueManager {
             });
         }
     }
-}
 
+    async exportarProdutos() {
+        try {
+            const response = await fetch('/api/produtos/exportar');
+
+            if (!response.ok) {
+                // Tenta ler a mensagem de erro do backend
+                const errorData = await response.json();
+                alert(`Erro ao exportar: ${errorData.erro || errorData.mensagem || 'Erro desconhecido.'}`);
+                return;
+            }
+
+            // 1. Obter o Blob (Binary Large Object) do arquivo retornado
+            const blob = await response.blob();
+
+            // 2. Tenta extrair o nome do arquivo do cabeçalho de resposta
+            let filename = 'produtos_estoque.csv';
+            const contentDisposition = response.headers.get('Content-Disposition');
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch && filenameMatch.length === 2) {
+                    filename = filenameMatch[1];
+                }
+            }
+
+            // 3. Criar um link temporário para iniciar o download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+
+            // 4. Simular o clique para iniciar o download e limpar
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            alert('Exportação de Produtos concluída com sucesso!');
+
+        } catch (error) {
+            console.error('Erro de rede ou na exportação:', error);
+            alert('Erro inesperado ao tentar exportar produtos. Verifique o console.');
+        }
+
+
+    }
+    
+
+} 
+    
 // Instância global
 let estoqueManager;
 
@@ -640,7 +689,11 @@ function fecharModal() {
     estoqueManager.fecharModal();
 }
 
+function exportarProdutos() {
+    estoqueManager.exportarProdutos();
+}
+
 // Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     estoqueManager = new EstoqueManager();
 });

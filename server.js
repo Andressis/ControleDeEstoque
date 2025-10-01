@@ -371,6 +371,83 @@ app.delete('/api/movimentacoes/:id', async (req, res) => {
     }
 });
 
+// =========================================================
+//                      ROTA DE EXPORTAÇÃO PARA CSV
+// =========================================================
+
+// Rota para exportar dados de produtos como CSV
+app.get('/api/produtos/exportar', async (req, res) => {
+    if (!isConnected) {
+        return res.status(503).json({ erro: 'Servidor indisponível. Banco de dados desconectado.' });
+    }
+    
+    try {
+        const request = pool.request();
+        // Consulta que retorna todos os dados de Produtos
+        const result = await request.query(`
+            SELECT 
+                Id, 
+                Codigo, 
+                Nome, 
+                Categoria, 
+                Quantidade, 
+                Preco, 
+                DataCriacao, 
+                DataAtualizacao 
+            FROM Produtos
+            ORDER BY Nome
+        `);
+
+        const data = result.recordset;
+
+        if (data.length === 0) {
+            return res.status(404).json({ mensagem: 'Nenhum produto encontrado para exportação.' });
+        }
+
+        // 1. Definir os cabeçalhos do CSV (colunas)
+        const headers = ['Id', 'Codigo', 'Nome', 'Categoria', 'Quantidade', 'Preco', 'DataCriacao', 'DataAtualizacao'];
+        // Usamos ponto e vírgula (;) como delimitador para compatibilidade com o Excel em PT-BR
+        let csv = headers.join(';') + '\n'; 
+
+        // 2. Mapear os dados para linhas do CSV
+        data.forEach(row => {
+            const values = headers.map(header => {
+                let value = row[header] === null || row[header] === undefined ? '' : row[header];
+
+                // Formatar valores para CSV
+                if (typeof value === 'string') {
+                    // Escapar aspas duplas e envolver com aspas se necessário
+                    value = value.replace(/"/g, '""'); 
+                    if (value.includes(';') || value.includes('\n') || value.includes('"')) {
+                        value = `"${value}"`; 
+                    }
+                } else if (value instanceof Date) {
+                    value = value.toLocaleString('pt-BR'); // Formatar data/hora
+                } else if (typeof value === 'number') {
+                     // Formatar números decimais (ponto para vírgula)
+                    value = String(value).replace('.', ','); 
+                }
+                
+                return value;
+            });
+            csv += values.join(';') + '\n';
+        });
+
+        // 3. Enviar a resposta com os headers corretos para download
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="produtos_estoque.csv"');
+        // O Byte Order Mark (BOM) é crucial para que o Excel interprete UTF-8 corretamente
+        const bom = '\ufeff'; 
+        res.send(bom + csv);
+
+    } catch (err) {
+        console.error('Erro ao exportar produtos:', err);
+        res.status(500).json({ erro: 'Erro interno do servidor ao exportar os dados.' });
+    }
+});
+
+    
+
 
 // Iniciar o servidor
 app.listen(PORT, () => {
