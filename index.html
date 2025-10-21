@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciamento de Estoque</title>
     <link rel="stylesheet" href="style.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -21,6 +24,7 @@
                 <button class="tab-button" onclick="showTab('produtos')">📦 Produtos</button>
                 <button class="tab-button" onclick="showTab('movimentacao')">🚚 Movimentação</button>
                 <button class="tab-button" onclick="showTab('configuracoes')">⚙️ Configurações</button>
+                <button class="tab-button" onclick="showTab('bi')">📈 BI</button>
             </div>
 
             <div class="tab-content-wrapper">
@@ -173,6 +177,22 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- ABA BI -->
+                <div id="bi" class="tab-content">
+                    <h2 class="section-title">BI — AV2</h2>
+
+                    <div class="form-section" style="margin-bottom: 20px;">
+                        <p>Este gráfico mostra o valor total do estoque por categoria (Quantidade × Preço).</p>
+                        <button class="btn btn-success" onclick="estoqueManager.atualizarGraficoBI()">Atualizar Gráfico</button>
+                    </div>
+
+                    <div class="chart-card form-section">
+                        <canvas id="chart-valor-categoria" width="800" height="400"></canvas>
+                    </div>
+
+                    <div id="bi-legend" style="margin-top:12px"></div>
                 </div>
 
                 <div id="relatorios" class="tab-content">

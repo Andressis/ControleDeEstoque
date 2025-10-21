@@ -1,4 +1,4 @@
-// Sistema de Gerenciamento de Estoque com API (Node/SQL)
+// script.js (atualizado com BI)
 class EstoqueManager {
     constructor() {
         this.produtos = [];
@@ -6,6 +6,10 @@ class EstoqueManager {
         this.movimentacoes = [];
         this.itemParaExcluir = { tipo: null, id: null, nome: null };
         this.editandoProduto = false;
+
+        // BI chart state
+        this.biChart = null;
+
         this.init();
     }
 
@@ -53,6 +57,19 @@ class EstoqueManager {
         } catch (error) {
             console.error('Erro ao carregar movimentações:', error);
             this.movimentacoes = [];
+        }
+    }
+
+    // Novo: carregar dados BI
+    async carregarBI() {
+        try {
+            const res = await fetch('/api/bi/valor-por-categoria');
+            if (!res.ok) throw new Error('Falha ao buscar dados BI');
+            const data = await res.json();
+            return data;
+        } catch (err) {
+            console.error('Erro BI:', err);
+            return [];
         }
     }
 
@@ -170,24 +187,16 @@ class EstoqueManager {
 
     // NOVO MÉTODO: Detalhes da Categoria ao Clicar
     detalharCategoria(nomeCategoria) {
-        // 1. Filtra produtos pertencentes à categoria
         const produtosDaCategoria = this.produtos.filter(p => p.Categoria === nomeCategoria);
-
-        // 2. Calcula a quantidade total de itens em estoque (soma das quantidades)
         const totalItens = produtosDaCategoria.reduce((acc, p) => acc + p.Quantidade, 0);
-
-        // 3. Calcula o valor total do estoque da categoria (soma de Quantidade * Preco)
         const valorTotalEstoque = produtosDaCategoria.reduce((acc, p) => {
             return acc + (p.Quantidade * p.Preco);
         }, 0);
 
         const detalhesDiv = document.getElementById('categoria-detalhes');
         if (!detalhesDiv) return;
-
-        // Formatação do valor para moeda local (BRL)
         const valorFormatado = valorTotalEstoque.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        // 4. Injeta e exibe os dados
         detalhesDiv.innerHTML = `
             <h4>Detalhes de Estoque: **${nomeCategoria}**</h4>
             <p><strong>Total de Produtos Distintos:</strong> ${produtosDaCategoria.length}</p>
@@ -195,11 +204,8 @@ class EstoqueManager {
             <p><strong>Valor Total do Estoque:</strong> ${valorFormatado}</p>
         `;
 
-        // Exibe o div de detalhes com um estilo de alerta informativo
         detalhesDiv.className = 'alert alert-info';
         detalhesDiv.style.display = 'block';
-
-        // Opcional: Rolagem suave até a div de detalhes
         detalhesDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -251,6 +257,7 @@ class EstoqueManager {
         this.atualizarSelectCategoriasProduto();
         this.atualizarTabelaCategorias();
         this.atualizarTabelaMovimentacoes();
+        // NÃO atualiza BI automaticamente para poupar chamadas; usuário clica "Atualizar Gráfico"
     }
 
     atualizarTabelaMovimentacoes() {
@@ -273,16 +280,10 @@ class EstoqueManager {
         };
 
         tbody.innerHTML = this.movimentacoes.map(mov => {
-
-            // Lógica para calcular o Valor Total: (Preço Unitário * Quantidade)
-            // Usa PrecoUnitario (que é NULL para entrada) ou 0 se for nulo.
             const precoUnitario = mov.PrecoUnitario || 0;
             const valorTotal = mov.Tipo === 'saida' ? precoUnitario * mov.Quantidade : 0;
-
-            // Exibição do preço e valor total (apenas para saída)
             const displayPreco = mov.Tipo === 'saida' ? formatCurrency(precoUnitario) : '-';
             const displayTotal = mov.Tipo === 'saida' ? formatCurrency(valorTotal) : '-';
-
             const movNomeParaExcluir = `Mov. ${mov.Tipo.toUpperCase()} de ${mov.Quantidade}x ${mov.ProdutoNome}`;
 
             return `
@@ -349,7 +350,6 @@ class EstoqueManager {
         if (!tbody) return;
 
         tbody.innerHTML = this.categorias.map(categoria => {
-            // Garante que aspas simples no nome da categoria sejam escapadas para o onclick
             const nomeEscapado = categoria.Nome.replace(/'/g, "\\'");
 
             return `
@@ -362,7 +362,6 @@ class EstoqueManager {
             `;
         }).join('');
 
-        // Oculta a div de detalhes ao recarregar a tabela
         const detalhesDiv = document.getElementById('categoria-detalhes');
         if (detalhesDiv) {
             detalhesDiv.style.display = 'none';
@@ -440,7 +439,6 @@ class EstoqueManager {
         } else if (tipo === 'categoria') {
             modalMensagem.textContent = `ATENÇÃO: Excluir a categoria "${nome}" pode causar problemas se houver produtos vinculados. Tem certeza?`;
         } else if (tipo === 'movimentacao') {
-            // MENSAGEM AJUSTADA PARA REFLETIR A REVERSÃO DO ESTOQUE
             modalMensagem.textContent = `ATENÇÃO: Você irá excluir a transação: "${nome}". Isso **reverterá a quantidade** no estoque. Tem certeza?`;
         }
 
@@ -455,7 +453,6 @@ class EstoqueManager {
         } else if (tipo === 'categoria') {
             await this.excluirItem('/api/categorias', id);
         } else if (tipo === 'movimentacao') {
-            // A API de movimentação fará a reversão do estoque.
             await this.excluirItem('/api/movimentacoes', id);
         }
 
@@ -557,7 +554,8 @@ class EstoqueManager {
             buttons[i].classList.remove('active');
         }
 
-        document.getElementById(tabName).classList.add('active');
+        const target = document.getElementById(tabName);
+        if (target) target.classList.add('active');
 
         const targetButton = Array.from(buttons).find(btn =>
             btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`showTab('${tabName}')`)
@@ -567,6 +565,11 @@ class EstoqueManager {
         }
 
         this.atualizarInterface();
+
+        // Quando abrir BI, atualiza automaticamente o gráfico (para facilitar)
+        if (tabName === 'bi') {
+            this.atualizarGraficoBI();
+        }
     }
 
     setupEventListeners() {
@@ -624,16 +627,12 @@ class EstoqueManager {
             const response = await fetch('/api/produtos/exportar');
 
             if (!response.ok) {
-                // Tenta ler a mensagem de erro do backend
                 const errorData = await response.json();
                 alert(`Erro ao exportar: ${errorData.erro || errorData.mensagem || 'Erro desconhecido.'}`);
                 return;
             }
 
-            // 1. Obter o Blob (Binary Large Object) do arquivo retornado
             const blob = await response.blob();
-
-            // 2. Tenta extrair o nome do arquivo do cabeçalho de resposta
             let filename = 'produtos_estoque.csv';
             const contentDisposition = response.headers.get('Content-Disposition');
             if (contentDisposition) {
@@ -643,14 +642,12 @@ class EstoqueManager {
                 }
             }
 
-            // 3. Criar um link temporário para iniciar o download
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
             a.download = filename;
 
-            // 4. Simular o clique para iniciar o download e limpar
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -662,11 +659,80 @@ class EstoqueManager {
             console.error('Erro de rede ou na exportação:', error);
             alert('Erro inesperado ao tentar exportar produtos. Verifique o console.');
         }
-
-
     }
-    
 
+    // =========================================================
+    //                      BI / GRÁFICOS
+    // =========================================================
+
+    // Cria ou atualiza o gráfico BI
+    async atualizarGraficoBI() {
+        const data = await this.carregarBI();
+        const labels = data.map(d => d.categoria || 'Sem Categoria');
+        const valores = data.map(d => d.valorTotal || 0);
+
+        // Gerar cores dinâmicas (paleta simples)
+        const colors = labels.map((_, i) => {
+            const hue = Math.floor((i * 47) % 360);
+            return `hsl(${hue} 70% 50%)`;
+        });
+
+        const ctx = document.getElementById('chart-valor-categoria').getContext('2d');
+
+        // Se já existir gráfico, atualiza os dados
+        if (this.biChart) {
+            this.biChart.data.labels = labels;
+            this.biChart.data.datasets[0].data = valores;
+            this.biChart.data.datasets[0].backgroundColor = colors;
+            this.biChart.update();
+        } else {
+            this.biChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Valor total (R$)',
+                        data: valores,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const v = context.parsed.y || 0;
+                                    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gerar uma legenda simples (texto)
+        const legendDiv = document.getElementById('bi-legend');
+        if (legendDiv) {
+            legendDiv.innerHTML = labels.map((lab, i) => `
+                <span style="display:inline-flex;align-items:center;margin-right:12px;">
+                    <span style="width:12px;height:12px;background:${colors[i]};display:inline-block;margin-right:6px;border-radius:2px;"></span>
+                    ${lab} — ${new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(valores[i] || 0)}
+                </span>
+            `).join('');
+        }
+    }
 } 
     
 // Instância global
@@ -696,4 +762,81 @@ function exportarProdutos() {
 // Inicializar quando a página carregar
 document.addEventListener('DOMContentLoaded', function () {
     estoqueManager = new EstoqueManager();
+});
+
+// =========================================================
+// ALERTA PERSONALIZADO — substitui alert() com estilo do site
+// =========================================================
+(function () {
+    const originalAlert = window.alert;
+
+    window.alert = function (mensagem) {
+        // Remove modal anterior, se existir
+        const existente = document.getElementById('custom-alert');
+        if (existente) existente.remove();
+
+        // Cria o contêiner do popup
+        const modal = document.createElement('div');
+        modal.id = 'custom-alert';
+        modal.innerHTML = `
+            <div class="custom-alert-overlay"></div>
+            <div class="custom-alert-box">
+                <h3>Notificação</h3>
+                <p>${mensagem}</p>
+                <button id="custom-alert-ok" class="btn btn-primary">OK</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Fecha ao clicar em OK
+        document.getElementById('custom-alert-ok').onclick = () => modal.remove();
+    };
+})();
+
+// =========================================================
+// ORDENAR TABELA — CLIQUE NOS TÍTULOS DAS COLUNAS
+// =========================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const tabela = document.querySelector('#produtos-tbody');
+    const cabecalhos = document.querySelectorAll('#produtos thead th');
+    let ordemAtual = { coluna: null, asc: true };
+
+    cabecalhos.forEach((th, index) => {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+            const chave = th.textContent.trim().toLowerCase();
+            let produtos = [...estoqueManager.produtos];
+
+            // Define ordem crescente/decrescente
+            if (ordemAtual.coluna === chave) {
+                ordemAtual.asc = !ordemAtual.asc;
+            } else {
+                ordemAtual = { coluna: chave, asc: true };
+            }
+
+            // Ordena conforme a coluna
+            produtos.sort((a, b) => {
+                let valA, valB;
+                switch (chave) {
+                    case 'código': valA = a.Codigo; valB = b.Codigo; break;
+                    case 'produto': valA = a.Nome; valB = b.Nome; break;
+                    case 'categoria': valA = a.Categoria; valB = b.Categoria; break;
+                    case 'quantidade': valA = a.Quantidade; valB = b.Quantidade; break;
+                    case 'preço': valA = a.Preco; valB = b.Preco; break;
+                    default: return 0;
+                }
+
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return ordemAtual.asc ? -1 : 1;
+                if (valA > valB) return ordemAtual.asc ? 1 : -1;
+                return 0;
+            });
+
+            // Atualiza tabela com nova ordem
+            estoqueManager.produtos = produtos;
+            estoqueManager.atualizarTabelaProdutos();
+        });
+    });
 });

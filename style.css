@@ -435,3 +435,167 @@ body {
 .modal-buttons .btn {
     width: 45%;
 }
+
+/* =========================================================
+   ESTILO ADICIONAL — POPUPS MODERNOS E COLORIDOS
+   ========================================================= */
+
+/* Animação geral de entrada */
+@keyframes popupFade {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* POPUP padrão */
+.modal-content {
+    animation: popupFade 0.3s ease;
+    background: linear-gradient(160deg, #2d2d2d, #1a1a1a);
+    box-shadow: 0 0 25px rgba(0, 255, 150, 0.15);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+/* Estilo geral do título e texto */
+.modal-content h3 {
+    font-size: 1.4em;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.modal-content p {
+    color: #d0d0d0;
+    line-height: 1.5;
+    font-size: 1em;
+}
+
+/* =============================== */
+/* VARIAÇÕES DE COR POR TIPO       */
+/* =============================== */
+
+/* Sucesso */
+.modal-content.sucesso {
+    border: 2px solid var(--color-success);
+    box-shadow: 0 0 25px rgba(72, 187, 120, 0.3);
+}
+
+.modal-content.sucesso h3 {
+    color: var(--color-success);
+}
+
+/* Erro / Perigo */
+.modal-content.erro {
+    border: 2px solid var(--color-danger);
+    box-shadow: 0 0 25px rgba(245, 101, 101, 0.3);
+}
+
+.modal-content.erro h3 {
+    color: var(--color-danger);
+}
+
+/* Alerta / Aviso */
+.modal-content.alerta {
+    border: 2px solid var(--color-warning);
+    box-shadow: 0 0 25px rgba(237, 137, 54, 0.3);
+}
+
+.modal-content.alerta h3 {
+    color: var(--color-warning);
+}
+
+/* Botão principal (OK) */
+.modal-buttons .btn-primary {
+    background: linear-gradient(135deg, var(--blue-1), var(--blue-2));
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.modal-buttons .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(66, 153, 225, 0.4);
+}
+
+/* Animação ao fechar */
+.modal-content.closing {
+    animation: fadeOut 0.25s ease forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+    }
+}
+
+/* =========================================================
+   ALERTA PERSONALIZADO (substitui alert() do navegador)
+   ========================================================= */
+
+#custom-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+}
+
+.custom-alert-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+}
+
+.custom-alert-box {
+    position: relative;
+    background: linear-gradient(160deg, #2d2d2d, #1a1a1a);
+    padding: 25px 35px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 255, 150, 0.15);
+    max-width: 400px;
+    text-align: center;
+    animation: popupFade 0.3s ease;
+    border: 2px solid var(--blue-2);
+    z-index: 2001;
+}
+
+.custom-alert-box h3 {
+    color: var(--color-success);
+    margin-bottom: 10px;
+    font-size: 1.3em;
+}
+
+.custom-alert-box p {
+    color: #e0e0e0;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+#custom-alert-ok {
+    background: linear-gradient(135deg, var(--blue-1), var(--blue-2));
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 25px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#custom-alert-ok:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 12px rgba(66,153,225,0.4);
+}
+

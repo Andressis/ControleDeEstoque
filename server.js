@@ -19,7 +19,6 @@ const config = {
     }
 };
 
-// Middlewares
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); 
 
@@ -200,8 +199,9 @@ app.post('/api/movimentacao', async (req, res) => {
         return res.status(400).json({ erro: 'Tipo de movimentação inválido.' });
     }
 
+    let transaction;
     try {
-        const transaction = new sql.Transaction(pool);
+        transaction = new sql.Transaction(pool);
         await transaction.begin();
         
         // 1. Obter Preço e Quantidade Atuais do Produto
@@ -301,8 +301,9 @@ app.get('/api/movimentacoes', async (req, res) => {
 app.delete('/api/movimentacoes/:id', async (req, res) => {
     const { id } = req.params;
     
+    let transaction;
     try {
-        const transaction = new sql.Transaction(pool);
+        transaction = new sql.Transaction(pool);
         await transaction.begin();
 
         const movRequest = new sql.Request(transaction);
@@ -319,8 +320,6 @@ app.delete('/api/movimentacoes/:id', async (req, res) => {
         const { ProdutoId, Tipo, Quantidade } = movResult.recordset[0];
 
         // 2. Determinar a operação de REVERSÃO
-        // Se for uma entrada, a exclusão é uma subtração no estoque (-).
-        // Se for uma saída, a exclusão é uma adição no estoque (+).
         const operador = Tipo === 'entrada' ? '-' : '+'; 
         const operacaoNome = Tipo === 'entrada' ? 'subtração' : 'adição'; 
         
@@ -329,18 +328,13 @@ app.delete('/api/movimentacoes/:id', async (req, res) => {
         updateRequest.input('produtoId', sql.Int, ProdutoId);
         updateRequest.input('quantidade', sql.Int, Quantidade);
         
-        // Antes de reverter a saída, verifica se o estoque atual é suficiente
-        if (Tipo === 'saida') {
+        if (Tipo === 'entrada') {
              const stockCheckRequest = new sql.Request(transaction);
              stockCheckRequest.input('produtoId', sql.Int, ProdutoId);
              const stockResult = await stockCheckRequest.query('SELECT Quantidade FROM Produtos WHERE Id = @produtoId');
              const currentStock = stockResult.recordset[0].Quantidade;
              
-             // O estoque pode ficar negativo se a saída original já levou ele a 0 ou menos, 
-             // mas estamos fazendo uma reversão (adição), então não precisamos de checagem.
-             // Se fosse uma reversão de entrada (subtração), a checagem seria necessária.
-             // Para a reversão de ENTRADA (operação -), precisamos checar se o estoque atual cobre.
-             if (Tipo === 'entrada' && currentStock < Quantidade) {
+             if (currentStock < Quantidade) {
                   await transaction.rollback();
                   return res.status(400).json({ erro: 'ERRO: Estoque insuficiente para reverter a entrada (produto ficaria negativo).' });
              }
@@ -375,7 +369,6 @@ app.delete('/api/movimentacoes/:id', async (req, res) => {
 //                      ROTA DE EXPORTAÇÃO PARA CSV
 // =========================================================
 
-// Rota para exportar dados de produtos como CSV
 app.get('/api/produtos/exportar', async (req, res) => {
     if (!isConnected) {
         return res.status(503).json({ erro: 'Servidor indisponível. Banco de dados desconectado.' });
@@ -404,27 +397,21 @@ app.get('/api/produtos/exportar', async (req, res) => {
             return res.status(404).json({ mensagem: 'Nenhum produto encontrado para exportação.' });
         }
 
-        // 1. Definir os cabeçalhos do CSV (colunas)
         const headers = ['Id', 'Codigo', 'Nome', 'Categoria', 'Quantidade', 'Preco', 'DataCriacao', 'DataAtualizacao'];
-        // Usamos ponto e vírgula (;) como delimitador para compatibilidade com o Excel em PT-BR
         let csv = headers.join(';') + '\n'; 
 
-        // 2. Mapear os dados para linhas do CSV
         data.forEach(row => {
             const values = headers.map(header => {
                 let value = row[header] === null || row[header] === undefined ? '' : row[header];
 
-                // Formatar valores para CSV
                 if (typeof value === 'string') {
-                    // Escapar aspas duplas e envolver com aspas se necessário
                     value = value.replace(/"/g, '""'); 
                     if (value.includes(';') || value.includes('\n') || value.includes('"')) {
                         value = `"${value}"`; 
                     }
                 } else if (value instanceof Date) {
-                    value = value.toLocaleString('pt-BR'); // Formatar data/hora
+                    value = value.toLocaleString('pt-BR'); 
                 } else if (typeof value === 'number') {
-                     // Formatar números decimais (ponto para vírgula)
                     value = String(value).replace('.', ','); 
                 }
                 
@@ -433,10 +420,8 @@ app.get('/api/produtos/exportar', async (req, res) => {
             csv += values.join(';') + '\n';
         });
 
-        // 3. Enviar a resposta com os headers corretos para download
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename="produtos_estoque.csv"');
-        // O Byte Order Mark (BOM) é crucial para que o Excel interprete UTF-8 corretamente
         const bom = '\ufeff'; 
         res.send(bom + csv);
 
@@ -446,11 +431,48 @@ app.get('/api/produtos/exportar', async (req, res) => {
     }
 });
 
-    
+// =========================================================
+//                      ENDPOINTS BI
+// =========================================================
 
+// Retorna valor total do estoque por categoria
+app.get('/api/bi/valor-por-categoria', async (req, res) => {
+    try {
+        // Soma (Quantidade * Preco) agrupada por Categoria
+        const query = `
+            SELECT 
+                Categoria,
+                SUM(CAST(Quantidade AS BIGINT) * CAST(Preco AS DECIMAL(20,2))) AS ValorTotal,
+                SUM(Quantidade) AS QuantidadeTotal
+            FROM Produtos
+            GROUP BY Categoria
+            ORDER BY Categoria
+        `;
+        const result = await pool.request().query(query);
+        // Mapear para formato mais amigável (numbers em JS)
+        const data = result.recordset.map(row => ({
+            categoria: row.Categoria,
+            valorTotal: row.ValorTotal ? parseFloat(row.ValorTotal) : 0,
+            quantidadeTotal: row.QuantidadeTotal ? parseInt(row.QuantidadeTotal, 10) : 0
+        }));
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ erro: err.message });
+    }
+});
 
 // Iniciar o servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
     console.log(`Acesse: http://localhost:${PORT}/index.html`);
+});
+
+app.use(express.json());
+
+// Middleware simples que remove 'Codigo' do corpo das requisições
+app.use((req, res, next) => {
+    if (req.body && typeof req.body === 'object' && 'Codigo' in req.body) {
+        delete req.body.Codigo;
+    }
+    next();
 });
